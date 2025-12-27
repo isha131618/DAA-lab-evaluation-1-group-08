@@ -28,3 +28,4 @@ Technologies Used:
 Python
 Tkinter
 PIL (Pillow)
+<img width="2248" height="1247" alt="image" src="https://github.com/user-attachments/assets/e1384075-b320-4f7c-afb0-8051fdf04b32" />
