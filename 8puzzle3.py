@@ -17,6 +17,31 @@ GOAL = [[1, 2, 3],
 
 DIRS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
+# ------------------ ADJACENCY MATRIX GRAPH ------------------
+
+state_index = {}     # state -> index
+index_state = {}     # index -> state
+adj_matrix = []      # adjacency matrix
+
+def add_state(state):
+    key = str(state)
+    if key not in state_index:
+        idx = len(state_index)
+        state_index[key] = idx
+        index_state[idx] = deepcopy(state)
+
+        for row in adj_matrix:
+            row.append(0)
+        adj_matrix.append([0] * (idx + 1))
+
+    return state_index[key]
+
+def add_edge(s1, s2):
+    i = add_state(s1)
+    j = add_state(s2)
+    adj_matrix[i][j] = 1
+    adj_matrix[j][i] = 1   # undirected graph
+
 # ------------------ UTILITY FUNCTIONS ------------------
 
 def find_zero(state):
@@ -67,7 +92,7 @@ def merge(left, right):
     i = j = 0
 
     while i < len(left) and j < len(right):
-        if left[i][0] < right[j][0]:   # compare heuristic value
+        if left[i][0] < right[j][0]:
             result.append(left[i])
             i += 1
         else:
@@ -78,14 +103,16 @@ def merge(left, right):
     result.extend(right[j:])
     return result
 
-# ------------------ GREEDY AI SOLVER (MERGE SORT) ------------------
+# ------------------ GREEDY SOLVER (WITH ADJ MATRIX) ------------------
 
 def greedy_solver(start):
     open_list = [(linear_conflict(start), start, [])]
     visited = set()
 
+    add_state(start)
+
     while open_list:
-        open_list = merge_sort(open_list)   # 🔹 MERGE SORT USED HERE
+        open_list = merge_sort(open_list)
         _, state, path = open_list.pop(0)
 
         if state == GOAL:
@@ -100,6 +127,8 @@ def greedy_solver(start):
                 nxt = deepcopy(state)
                 nxt[zr][zc], nxt[nr][nc] = nxt[nr][nc], 0
 
+                add_edge(state, nxt)   
+
                 if str(nxt) not in visited:
                     h = linear_conflict(nxt)
                     open_list.append((h, nxt, path + [state]))
@@ -111,7 +140,7 @@ def greedy_solver(start):
 class PuzzleApp:
     def __init__(self, root):
         self.root = root
-        root.title("8-Puzzle — User vs Greedy AI (Merge Sort)")
+        root.title("8-Puzzle — User vs Greedy AI (Adjacency Matrix)")
         root.geometry("1500x800")
         root.configure(bg=BG_COLOR)
 
@@ -133,13 +162,11 @@ class PuzzleApp:
         bar = tk.Frame(self.root, bg="Dark slate grey", height=80)
         bar.pack(fill="x")
 
-        tk.Label(
-            bar,
-            text="8-Puzzle — User vs Greedy AI (Merge Sort)",
-            bg="Dark slate grey",
-            fg="white",
-            font=("Segoe UI", 22, "bold")
-        ).pack(pady=10)
+        tk.Label(bar,
+                 text="8-Puzzle — User vs Greedy AI (Adjacency Matrix)",
+                 bg="Dark slate grey",
+                 fg="white",
+                 font=("Segoe UI", 22, "bold")).pack(pady=10)
 
     def build_sidebar(self):
         side = tk.Frame(self.root, bg="Dark slate grey", width=200)
@@ -171,18 +198,18 @@ class PuzzleApp:
         controls = tk.Frame(center, bg=BG_COLOR)
         controls.pack(pady=20)
 
-        tk.Button(controls, text="Shuffle", font=("Segoe UI", 14),
+        tk.Button(controls, text="Shuffle",
+                  font=("Segoe UI", 14),
                   width=12, command=self.shuffle).pack(side="left", padx=10)
 
-        tk.Button(controls, text="Solve (AI)", font=("Segoe UI", 14),
+        tk.Button(controls, text="Solve (AI)",
+                  font=("Segoe UI", 14),
                   width=12, command=self.solve_ai).pack(side="left", padx=10)
 
-        self.info_lbl = tk.Label(
-            center,
-            text="User Steps: 0 | AI Steps: 0",
-            font=("Segoe UI", 14),
-            bg=BG_COLOR
-        )
+        self.info_lbl = tk.Label(center,
+                                 text="User Steps: 0 | AI Steps: 0",
+                                 font=("Segoe UI", 14),
+                                 bg=BG_COLOR)
         self.info_lbl.pack()
 
     def create_board(self, parent, title, command):
@@ -214,9 +241,8 @@ class PuzzleApp:
         self.cuts = []
         for i in range(8):
             r, c = divmod(i, 3)
-            piece = img.crop(
-                (c * TILE, r * TILE,
-                 (c + 1) * TILE, (r + 1) * TILE))
+            piece = img.crop((c * TILE, r * TILE,
+                              (c + 1) * TILE, (r + 1) * TILE))
             self.cuts.append(ImageTk.PhotoImage(piece))
         self.cuts.append(None)
 
